@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import mysql.connector
 from mysql.connector import Error
 import uuid
+import json
 
 app = FastAPI()
 
@@ -14,13 +15,15 @@ app = FastAPI()
 # Settings for variables #
 #------------------------#
 
-app = FastAPI()
-db_hostname = "localhost"
-db_username = "root"
-db_password = "jn/aDqLkc6"
-db_name = "superrm"
-db_table_users = "users"
-db_table_books = "books"
+with open("config") as f:
+    cfg = json.load(f)
+
+db_hostname = cfg["db_hostname"]
+db_username = cfg["db_username"]
+db_password = cfg["db_password"]
+db_name = cfg["db_name"]
+db_table_users = cfg["db_table_users"]
+db_table_books = cfg["db_table_books"]
 
 #-------------------#---------------------------------------------------------------------#
 # Functions for SQL # https://www.freecodecamp.org/japanese/news/connect-python-with-sql/ #
@@ -92,8 +95,8 @@ async def register(account: Register):
     if value[0][0]==0:
         uniqueid = str(uuid.uuid4())
         execute_query(connection, f"INSERT INTO {db_table_users} (uuid, id, username) VALUES ('{uniqueid}', '{account.id}', '{account.username}');")
-        return {"uuid": uniqueid, "id": account.id, "username": account.username}
-    return False
+        return {"state": True, "message": "User created successfully", "uuid": uniqueid, "id": account.id, "username": account.username}
+    return {"state": False, "message": "User did not created"}
 
 #---------------#
 # Connect to DB #

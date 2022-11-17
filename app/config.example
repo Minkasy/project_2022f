@@ -1,1 +1,10 @@
-dbpass,ThisIsThePasswordForDB
+{
+    "config_version": 0.01,
+    "db_hostname": "localhost",
+    "db_username": "root",
+    "db_password": "PasswordOfYourDB",
+    "db_name": "superrm",
+    "db_table_users": "users",
+    "db_table_books": "books",
+    "default_usermode": 3
+}

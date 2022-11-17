@@ -71,6 +71,8 @@ curl -X POST "example.com/register" -H 'Content-Type: application/json' -d '{"id
    - 編集
  - MySQL 等の設定を外部の config から読み込み
  - シェルスクリプト or systemd による service 化で実行
+ - ユーザの権限管理
+   - 現状でユーザ情報に 'usermode' を付与済み
 
 ### Extra
 

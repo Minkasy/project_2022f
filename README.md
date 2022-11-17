@@ -58,6 +58,27 @@ uvicorn main:app --reload
 curl -X POST "example.com/register" -H 'Content-Type: application/json' -d '{"id":"foo","username":"Testuser"}'
 ```
 
+### Usermode
+
+データベース内ではユーザ情報として権限の情報を保持しています。  
+以下の表より、持つ権限に合ったそれぞれの数字の総和が保持されます。
+
+|  Permission  |  Value  |
+| ---- | ---- |
+|  Read  |  1  |
+|  Post  |  2  |
+|  Admin  |  4  |
+
+例えば、3 を持つ場合はデータの取得と投稿ができます。
+
+また、0 を持つ場合は一切の権限を持ちません。
+
+現状、以下の通りになっています。
+
+ - 登録時に config で設定したデフォルト値が適用される
+   - デフォルト: 3
+ - データベースを直接変更することでのみ変更可能
+
 ## DONE
 
  - ユーザの登録

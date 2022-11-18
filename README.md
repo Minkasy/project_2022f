@@ -28,6 +28,7 @@ HTTP でリクエストを受信し、それに合わせて動作します。
  - Alma Linux 9
  - Python 3.9.10
  - MySQL 8.0.31 (MySQL Community Server - GPL)
+ - Screen version 4.06.02 (GNU) 23-Oct-17
 
 ## Install
 
@@ -37,16 +38,20 @@ HTTP でリクエストを受信し、それに合わせて動作します。
 dnf install python python3-pip python-devel
 pip3 install -r requirements.txt
 pip3 install mysql-connector-python
+
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
+sudo dnf install screen -y
 ```
 
 MySQL の利用のため、設定を記述します。`app/config.example` を `app/config` にリネームし、適切に書き換えてください。
 
-以上が終わったら、実行します。下記を実行すると、`127.0.0.1:8000` で WebAPI が動作します。  
+以上が終わったら、セットアップスクリプトを実行します。下記を実行すると、`127.0.0.1:8000` で WebAPI が動作します。  
 必要があれば、リバースプロキシ等でホスト名やポートを設定してください。本 README.md では、これ以降 `example.com:80` で動作しているものとします。
 
+また、セットアップスクリプトには systemd に登録する記述が含まれているため、以降は systemd より管理することができます。
+
 ```
-cd app
-uvicorn main:app --host 0.0.0.0 --reload
+./setup.sh
 ```
 
 ## Usage
@@ -132,13 +137,14 @@ Python では、`data` をキーとして、それぞれのデータの辞書の
  - ユーザの登録
  - 付箋の登録
    - ISBN, ページ数, 位置, 付箋の種別, 投稿日時, 更新日時, 投稿者 UUID, 内容を保持
+ - セットアップスクリプトの作成
+   - 実行すると systemd から管理できるように
 
 ## TODO
 
  - 付箋の登録
    - 削除
    - 編集
- - シェルスクリプト or systemd による service 化で実行
  - ユーザの権限管理
    - 現状でユーザ情報に 'usermode' を付与済み
 
@@ -149,6 +155,8 @@ Python では、`data` をキーとして、それぞれのデータの辞書の
  - パスワード保存方法の見直し
    - DB 登録時はハッシュ化しているけど、ソルトとか全く触ってないので微妙かもしれない
    - あと、HTTPS なら登録時に生のパスワードを送信しても良いのか？という気持ちもある
+ - systemd での管理の最適化
+   - `systemctl stop projectapi.service` してから `systemctl status projectapi.service` を見ると、正しく終了されていない気がする
 
 ## 参考
 https://qiita.com/yota_dev/items/ab8dea7f71c8a130d5bf

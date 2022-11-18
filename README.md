@@ -41,11 +41,12 @@ pip3 install mysql-connector-python
 
 MySQL の利用のため、設定を記述します。`app/config.example` を `app/config` にリネームし、適切に書き換えてください。
 
-以上が終わったら、実行します。
+以上が終わったら、実行します。下記を実行すると、`127.0.0.1:8000` で WebAPI が動作します。  
+必要があれば、リバースプロキシ等でホスト名やポートを設定してください。本 README.md では、これ以降 `example.com:80` で動作しているものとします。
 
 ```
 cd app
-uvicorn main:app --reload
+uvicorn main:app --host 0.0.0.0 --reload
 ```
 
 ## Usage
@@ -93,8 +94,17 @@ type の値の詳細については以下の通りです。
 以下の curl コマンドのような HTTP リクエストで投稿された付箋を取得することができます。
 
 ```
+# curl example.com/getpost/{isbn}
 curl example.com/getpost/9784274223570
 ```
+
+上記のコマンドを実行すると、以下の値が得られます。
+
+```
+{"data":[{"postid":"15497259-8ea2-43b2-bbc2-90c0ba52868d","page":1,"x":0.5,"y":0.5,"type":0,"postdate":20221117181806,"updatedate":null,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739","content":"This is first post in this service"},{"postid":"2402e745-179e-4d0a-bb66-d63789d0a5b8","page":1,"x":0.5,"y":0.5,"type":0,"postdate":20221118061359,"updatedate":null,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739","content":"This is the second post in this service"}]}
+```
+
+Python では、`data` をキーとして、それぞれのデータの辞書のリストが返ってくる形であることに注意してください。
 
 ### Usermode
 
@@ -120,15 +130,14 @@ curl example.com/getpost/9784274223570
 ## DONE
 
  - ユーザの登録
+ - 付箋の登録
+   - ISBN, ページ数, 位置, 付箋の種別, 投稿日時, 更新日時, 投稿者 UUID, 内容を保持
 
 ## TODO
 
  - 付箋の登録
-   - ISBN, ページ数, 位置, 内容, 付箋の種別
-     - 付箋の種別: 疑問, 補足, 別解等?
    - 削除
    - 編集
- - MySQL 等の設定を外部の config から読み込み
  - シェルスクリプト or systemd による service 化で実行
  - ユーザの権限管理
    - 現状でユーザ情報に 'usermode' を付与済み

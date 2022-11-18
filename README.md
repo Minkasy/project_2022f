@@ -55,7 +55,45 @@ uvicorn main:app --reload
 以下の curl コマンドのような HTTP リクエストで id と username を指定することで、自動的に uuid が生成され、データベースにユーザが登録されます。
 
 ```
-curl -X POST "example.com/register" -H 'Content-Type: application/json' -d '{"id":"foo","username":"Testuser"}'
+curl -X POST "example.com/register" -H 'Content-Type: application/json' -d '{"id":"foo","username":"Testuser", "password": "password"}'
+```
+
+### Post
+
+以下の curl コマンドのような HTTP リクエストで付箋を投稿することができます。
+
+```
+curl -X POST "example.com/post" -H 'Content-Type: application/json' -d '{"isbn": "9784274223570", "page": 1, "x": 0.5, "y": 0.5, "type": 0, "account_uuid": "00000your-uuid00000", "content": "This is first post in this service"}'
+```
+
+それぞれの値については以下の通りです。
+
+|  Parameter  |  Description  |
+| ---- | ---- |
+|  isbn  | ISBN です。ハイフン等を使用せず、数字のみの 13 桁で入力してください。  |
+|  page  | 該当箇所のペース番号です。  |
+|  x  |  該当箇所の x 座標です。0 <= x <= 1 であり、ページの左上を原点として、右側の何 % の部分であるかを入力してください。<br>ex. 10cm の横幅のページのとき、x = 0.3 であれば左から 3cm の部分。  |
+|  y  |  該当箇所の y 座標です。0 <= y <= 1 であり、ページの左上を原点として、下側の何 % の部分であるかを入力してください。<br>ex. 10cm の縦幅のページのとき、y = 0.3 であれば上から 3cm の部分。  |
+|  type  |  投稿の種別です。詳しくは下部の表を参照してください。  |
+|  account_uuid  | 投稿者のアカウントの UUID です。  |
+|  content  |  投稿の内容。極力、Markdown 記法をサポートするようにしてください。  |
+
+type の値の詳細については以下の通りです。
+
+|  Value  |  Description  |
+| ---- | ---- |
+|  0  |  一般ユーザの投稿。わかりにくく、つまずいた部分。  |
+|  1  |  一般ユーザの投稿。ユーザによる補足説明。  |
+|  2  |  一般ユーザの投稿。演習などの追加解説や別解。  |
+|  3  |  公式ユーザの投稿。公式による補足説明。  |
+|  4  |  公式ユーザの投稿。演習などの追加解説や別解。  |
+
+### Get post
+
+以下の curl コマンドのような HTTP リクエストで投稿された付箋を取得することができます。
+
+```
+curl example.com/getpost/9784274223570
 ```
 
 ### Usermode
@@ -99,6 +137,9 @@ curl -X POST "example.com/register" -H 'Content-Type: application/json' -d '{"id
 
  - コミュニティ機能の実装
    - スレッド等
+ - パスワード保存方法の見直し
+   - DB 登録時はハッシュ化しているけど、ソルトとか全く触ってないので微妙かもしれない
+   - あと、HTTPS なら登録時に生のパスワードを送信しても良いのか？という気持ちもある
 
 ## 参考
 https://qiita.com/yota_dev/items/ab8dea7f71c8a130d5bf

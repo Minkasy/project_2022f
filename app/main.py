@@ -9,6 +9,7 @@ from mysql.connector import Error
 import uuid
 import json
 import datetime
+import hashlib
 
 app = FastAPI()
 
@@ -108,6 +109,7 @@ async def getpost(isbn: str, page: int = None, type = None, uuid: str = None):
 class Register(BaseModel):
     id: str
     username: str
+    password: str
 
 @app.post("/register")
 async def register(account: Register):
@@ -116,8 +118,9 @@ async def register(account: Register):
     value = execute_query(connection, f"SELECT count(id) FROM {db_table_users} WHERE id='{account.id}'")
     if value[0][0]==0:
         uniqueid = str(uuid.uuid4())
-        execute_query(connection, f"""INSERT INTO {db_table_users} (uuid, id, username, usermode)
-                                        VALUES ('{uniqueid}', '{account.id}', '{account.username}', {default_usermode});""")
+        passhash = hashlib.sha256(account.password.encode('utf-8')).hexdigest()
+        execute_query(connection, f"""INSERT INTO {db_table_users} (uuid, id, username, usermode, password)
+                                        VALUES ('{uniqueid}', '{account.id}', '{account.username}', {default_usermode}, '{passhash}');""")
         return {"state": True, "message": "User created successfully", "uuid": uniqueid, "id": account.id, "username": account.username, "usermode": default_usermode}
     return {"state": False, "message": "User did not created"}
 
@@ -171,7 +174,8 @@ execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_users}(
                 uuid VARCHAR(36) PRIMARY KEY,
                 id VARCHAR(15),
                 username VARCHAR(50),
-                usermode INT);""")
+                usermode INT,
+                password VARCHAR(64));""")
 execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_books}(
                 isbn VARCHAR(13) PRIMARY KEY,
                 posts INT);""")

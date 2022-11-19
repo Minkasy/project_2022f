@@ -157,6 +157,9 @@ Python では、`data` をキーとして、それぞれのデータの辞書の
    - あと、HTTPS なら登録時に生のパスワードを送信しても良いのか？という気持ちもある
  - systemd での管理の最適化
    - `systemctl stop projectapi.service` してから `systemctl status projectapi.service` を見ると、正しく終了されていない気がする
+ - 攻撃対策
+   - 現状何もしていません。結構まずいかも。
+     - CSRF 関連の把握, SQL インジェクション対策
 
 ## 参考
 https://qiita.com/yota_dev/items/ab8dea7f71c8a130d5bf

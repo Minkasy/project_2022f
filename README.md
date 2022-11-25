@@ -23,6 +23,8 @@
 
 HTTP でリクエストを受信し、それに合わせて動作します。
 
+フロントエンドは自由に実装できるため、教育機関などクローズドな環境で使用するのもよいでしょう。
+
 ## 検証環境
 
  - Alma Linux 9
@@ -106,10 +108,32 @@ curl example.com/getpost/9784274223570
 上記のコマンドを実行すると、以下の値が得られます。
 
 ```
-{"data":[{"postid":"15497259-8ea2-43b2-bbc2-90c0ba52868d","page":1,"x":0.5,"y":0.5,"type":0,"postdate":20221117181806,"updatedate":null,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739","content":"This is first post in this service"},{"postid":"2402e745-179e-4d0a-bb66-d63789d0a5b8","page":1,"x":0.5,"y":0.5,"type":0,"postdate":20221118061359,"updatedate":null,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739","content":"This is the second post in this service"}]}
+{"state": true, "data":[{"postid":"15497259-8ea2-43b2-bbc2-90c0ba52868d","page":1,"x":0.5,"y":0.5,"type":0,"postdate":20221117181806,"updatedate":null,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739","content":"This is first post in this service"},{"postid":"2402e745-179e-4d0a-bb66-d63789d0a5b8","page":1,"x":0.5,"y":0.5,"type":0,"postdate":20221118061359,"updatedate":null,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739","content":"This is the second post in this service"}]}
 ```
 
 Python では、`data` をキーとして、それぞれのデータの辞書のリストが返ってくる形であることに注意してください。
+
+### Show users
+
+以下の curl コマンドのような HTTP リクエストで入力した ID に一致するユーザの情報を取得することができます。
+
+```
+curl example.com/users/foo
+```
+
+それぞれの値については以下の通りです。
+
+|  Parameter  |  Description  |
+| ---- | ---- |
+|  state  |  値の取得状況。正常に終了していれば、true が返る。  |
+|  message  |  state が false であれば返され、その旨を伝えるメッセージが含まれる。  |
+|  id  |  ユーザの ID。  |
+|  username  |  ユーザ名。ID とは異なる。  |
+|  usermode  |  ユーザの持つ権限。  |
+|  posts  |  投稿数。  |
+|  goods  |  ユーザの獲得したいいね数。(未実装)  |
+|  registerdate  |  ユーザの登録日時。  |
+|  verify  |  ユーザの認証状況。認証済みアカウントであれば 1、そうでなければ 0。  |
 
 ### Usermode
 
@@ -135,6 +159,7 @@ Python では、`data` をキーとして、それぞれのデータの辞書の
 ## DONE
 
  - ユーザの登録
+   - 登録日や認証ユーザ、投稿数などのデータを保持するように変更
  - 付箋の登録
    - ISBN, ページ数, 位置, 付箋の種別, 投稿日時, 更新日時, 投稿者 UUID, 内容を保持
  - セットアップスクリプトの作成

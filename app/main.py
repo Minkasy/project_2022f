@@ -91,6 +91,8 @@ async def root():
 async def getpost(isbn: str, page: int = None, type = None, uuid: str = None):
     global connection
     value = execute_query(connection, f"SELECT * FROM `{isbn}`")
+    if len(value)==0:
+        return {"state": False, "message": "Requested ISBN does not exist in the database"}
     result = []
     for v in value:
         tmp = {}
@@ -104,7 +106,16 @@ async def getpost(isbn: str, page: int = None, type = None, uuid: str = None):
         tmp["account_uuid"] = v[7]
         tmp["content"] = v[8]
         result.append(tmp)
-    return {"data": result}
+    return {"state": True, "data": result}
+
+@app.get("/users/{id}")
+async def showusers(id: str):
+    global connection
+    value = execute_query(connection, f"SELECT * FROM {db_table_users} WHERE id='{id}';")
+    if len(value)==0:
+        return {"state": False, "message": "Requested ID does not exist in the database"}
+    v = value[0]
+    return {"state": True, "id": v[1], "username": v[2], "usermode": v[3], "posts": v[5], "goods": v[6], "registerdate": v[8], "verify": v[9]}
 
 class Register(BaseModel):
     id: str
@@ -119,8 +130,16 @@ async def register(account: Register):
     if value[0][0]==0:
         uniqueid = str(uuid.uuid4())
         passhash = hashlib.sha256(account.password.encode('utf-8')).hexdigest()
-        execute_query(connection, f"""INSERT INTO {db_table_users} (uuid, id, username, usermode, password)
-                                        VALUES ('{uniqueid}', '{account.id}', '{account.username}', {default_usermode}, '{passhash}');""")
+        dt = datetime.datetime.now()
+        rdate = int(str(dt.year) + str(dt.month).zfill(2) + str(dt.day).zfill(2) + str(dt.hour).zfill(2) + str(dt.minute).zfill(2) + str(dt.second).zfill(2))
+        execute_query(connection, f"""INSERT INTO {db_table_users} (uuid, id, username, usermode, password, posts, goods, coins, registerdate, verify)
+                                        VALUES ('{uniqueid}', '{account.id}', '{account.username}', {default_usermode}, '{passhash}', 0, 0, 0, {rdate}, 0);""")
+        execute_query(connection, f"""CREATE TABLE IF NOT EXISTS `user-posts-{uniqueid}`(
+                                        isbn VARCHAR(13),
+                                        postid VARCHAR(36) PRIMARY KEY);""")
+        execute_query(connection, f"""CREATE TABLE IF NOT EXISTS `user-favorite-{uniqueid}`(
+                                        type INT,
+                                        id VARCHAR(36) PRIMARY KEY);""")
         return {"state": True, "message": "User created successfully", "uuid": uniqueid, "id": account.id, "username": account.username, "usermode": default_usermode}
     return {"state": False, "message": "User did not created"}
 
@@ -140,7 +159,7 @@ async def post(post: Post):
     value = execute_query(connection, f"SELECT count(isbn) FROM {db_table_books} WHERE isbn='{post.isbn}'")
     if value[0][0]==0:
         execute_query(connection, f"INSERT INTO {db_table_books} (isbn, posts) VALUES ('{post.isbn}', 0)")
-        execute_query(connection, f"""CREATE TABLE IF NOT EXISTS `{post.isbn}`(
+        execute_query(connection, f"""CREATE TABLE IF NOT EXISTS `book-posts-{post.isbn}`(
                                         postid VARCHAR(36) PRIMARY KEY,
                                         page INT,
                                         x FLOAT,
@@ -160,6 +179,7 @@ async def post(post: Post):
         execute_query(connection, f"""INSERT INTO `{post.isbn}` (postid, page, x, y, type, postdate, updatedate, account_uuid, content)
                                         VALUES ('{uniqueid}', '{post.page}', {post.x}, {post.y}, {post.type}, {postdate}, NULL, '{post.account_uuid}', '{post.content}');""")
         execute_query(connection, f"UPDATE {db_table_books} SET posts=posts+1 WHERE isbn='{post.isbn}'")
+        execute_query(connection, f"UPDATE {db_table_users} SET posts=posts+1 WHERE uuid='{post.account_uuid}'")
         return {"state": True, "message": "Your post has been accepted", "postid": {uniqueid}}
     return {"state": False, "message": "Your post has been refused"}
 
@@ -175,7 +195,12 @@ execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_users}(
                 id VARCHAR(15),
                 username VARCHAR(50),
                 usermode INT,
-                password VARCHAR(64));""")
+                password VARCHAR(64),
+                posts INT,
+                goods INT,
+                coins INT,
+                registerdate BIGINT,
+                verify INT);""")
 execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_books}(
                 isbn VARCHAR(13) PRIMARY KEY,
                 posts INT);""")

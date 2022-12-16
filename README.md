@@ -96,13 +96,28 @@ type の値の詳細については以下の通りです。
 |  3  |  公式ユーザの投稿。公式による補足説明。  |
 |  4  |  公式ユーザの投稿。演習などの追加解説や別解。  |
 
-### Get post
+### Get books
+
+以下の curl コマンドのような HTTP リクエストで付箋の登録されている本の ISBN を取得することができます。
+
+```
+curl example.com/getbooks
+```
+
+上記のコマンドを実行すると、以下の値が得られます。
+
+```
+{"state":true,"data":[{"isbn":"9784274223570","posts":2}]}
+```
+
+
+### Get posts
 
 以下の curl コマンドのような HTTP リクエストで投稿された付箋を取得することができます。
 
 ```
-# curl example.com/getpost/{isbn}
-curl example.com/getpost/9784274223570
+# curl example.com/getposts/{isbn}
+curl example.com/getposts/9784274223570
 ```
 
 上記のコマンドを実行すると、以下の値が得られます。

@@ -87,8 +87,22 @@ def execute_query(connection, query):
 async def root():
     return {"message": "Hello World"}
 
-@app.get("/getpost/{isbn}")
-async def getpost(isbn: str, page: int = None, type: int = None, uuid: str = None):
+@app.get("/getbooks")
+async def getbooks():
+    connection = create_db_connection(db_hostname, db_username, db_password, db_name)
+    value = execute_query(connection, f"SELECT * FROM books;")
+    if len(value)==0:
+        return {"state": False, "message": "No books are available"}
+    result = []
+    for v in value:
+        tmp = {}
+        tmp["isbn"] = v[0]
+        tmp["posts"] = v[1]
+        result.append(tmp)
+    return {"state": True, "data": result}
+
+@app.get("/getposts/{isbn}")
+async def getposts(isbn: str, page: int = None, type: int = None, uuid: str = None):
     connection = create_db_connection(db_hostname, db_username, db_password, db_name)
     value = execute_query(connection, f"SELECT * FROM posts WHERE isbn='{isbn}'")
     if len(value)==0:
@@ -125,6 +139,7 @@ class Register(BaseModel):
 
 @app.post("/register")
 async def register(account: Register):
+    #print(f"id: {id}, username: {username}, password: {password}")
     connection = create_db_connection(db_hostname, db_username, db_password, db_name)
     # check if the requested user already exists or not
     value = execute_query(connection, f"SELECT count(id) FROM {db_table_users} WHERE id='{account.id}'")

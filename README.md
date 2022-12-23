@@ -150,7 +150,7 @@ curl example.com/users/foo
 |  registerdate  |  ユーザの登録日時。  |
 |  verify  |  ユーザの認証状況。認証済みアカウントであれば 1、そうでなければ 0。  |
 
-### Usermode
+#### Usermode
 
 データベース内ではユーザ情報として権限の情報を保持しています。  
 以下の表より、持つ権限に合ったそれぞれの数字の総和が保持されます。
@@ -170,6 +170,37 @@ curl example.com/users/foo
  - 登録時に config で設定したデフォルト値が適用される
    - デフォルト: 3
  - データベースを直接変更することでのみ変更可能
+
+### Favorite
+
+以下の curl コマンドのような HTTP リクエストでアカウントの UUID と付箋の Post ID を指定することで、付箋がお気に入り登録されます。
+
+```
+curl -X POST "example.com/register" -H 'Content-Type: application/json' -d '{"type":0, "account_uuid":"0a891785-9484-44e6-b1ea-970792223739", "postid":"5c266c27-c598-4a26-8147-c57567a303e9"}'
+```
+
+### Favorite list
+
+以下の curl コマンドのような HTTP リクエストでユーザがお気に入り登録した付箋を取得することができます。
+
+```
+# curl example.com/favlist/{id}
+curl example.com/favlist/foo
+```
+
+上記のコマンドを実行すると、以下の値が得られます。
+
+```
+{"state":true,"data":[{"type":0,"id":"foo","postid":"5c266c27-c598-4a26-8147-c57567a303e9","date":20221223054401}]}
+```
+
+#### Type
+
+データベース内ではお気に入りの種別を保持しています。
+
+|  Type  |  Value  |
+| ---- | ---- |
+|  Normal  |  0  |
 
 ## DONE
 

@@ -26,6 +26,8 @@ db_password = cfg["db_password"]
 db_name = cfg["db_name"]
 db_table_users = cfg["db_table_users"]
 db_table_books = cfg["db_table_books"]
+db_table_posts = cfg["db_table_posts"]
+db_table_favorite = cfg["db_table_favorite"]
 default_usermode = cfg["default_usermode"] # If you change this, you should see README.md
 
 #-------------------#---------------------------------------------------------------------#
@@ -90,7 +92,7 @@ async def root():
 @app.get("/getbooks")
 async def getbooks():
     connection = create_db_connection(db_hostname, db_username, db_password, db_name)
-    value = execute_query(connection, f"SELECT * FROM books;")
+    value = execute_query(connection, f"SELECT * FROM {db_table_books};")
     if len(value)==0:
         return {"state": False, "message": "No books are available"}
     result = []
@@ -131,6 +133,24 @@ async def showusers(id: str):
         return {"state": False, "message": "Requested ID does not exist in the database"}
     v = value[0]
     return {"state": True, "id": v[1], "username": v[2], "usermode": v[3], "posts": v[5], "goods": v[6], "registerdate": v[8], "verify": v[9]}
+
+@app.get("/favlist/{id}")
+async def favlist(id: str):
+    connection = create_db_connection(db_hostname, db_username, db_password, db_name)
+    value = execute_query(connection, f"SELECT * FROM {db_table_users} WHERE id='{id}';")
+    if len(value)==0:
+        return {"state": False, "message": "Requested ID does not exist in the database"}
+    uuid = value[0][0]
+    value = execute_query(connection, f"SELECT * FROM {db_table_favorite} WHERE account_uuid='{uuid}';")
+    result = []
+    for v in value:
+        tmp = {}
+        tmp["type"] = v[0]
+        tmp["id"] = id
+        tmp["postid"] = v[2]
+        tmp["date"] = v[3]
+        result.append(tmp)
+    return {"state": True, "data": result}
 
 class Register(BaseModel):
     id: str
@@ -175,12 +195,34 @@ async def post(post: Post):
         uniqueid = str(uuid.uuid4())
         dt = datetime.datetime.now()
         postdate = int(str(dt.year) + str(dt.month).zfill(2) + str(dt.day).zfill(2) + str(dt.hour).zfill(2) + str(dt.minute).zfill(2) + str(dt.second).zfill(2))
-        execute_query(connection, f"""INSERT INTO `posts` (postid, isbn, page, x, y, type, postdate, updatedate, account_uuid, content)
+        execute_query(connection, f"""INSERT INTO {db_table_users} (postid, isbn, page, x, y, type, postdate, updatedate, account_uuid, content)
                                         VALUES ('{uniqueid}', '{post.isbn}', '{post.page}', {post.x}, {post.y}, {post.type}, {postdate}, NULL, '{post.account_uuid}', '{post.content}');""")
         execute_query(connection, f"UPDATE {db_table_books} SET posts=posts+1 WHERE isbn='{post.isbn}'")
         execute_query(connection, f"UPDATE {db_table_users} SET posts=posts+1 WHERE uuid='{post.account_uuid}'")
         return {"state": True, "message": "Your post has been accepted", "postid": {uniqueid}}
     return {"state": False, "message": "Your post has been refused"}
+
+class Favorite(BaseModel):
+    type: int
+    account_uuid: str
+    postid: str
+
+@app.post("/favorite")
+async def favorite(favorite: Favorite):
+    connection = create_db_connection(db_hostname, db_username, db_password, db_name)
+    # check if the given account_uuid is exists or not
+    value = execute_query(connection, f"SELECT count(uuid) FROM {db_table_users} WHERE uuid='{favorite.account_uuid}'")
+    if value[0][0]==0:
+        return {"state": False, "message": "Requested account UUID does not exist"}
+    # check if the given postid is exists or not
+    value = execute_query(connection, f"SELECT count(postid) FROM {db_table_posts} WHERE postid='{favorite.postid}'")
+    if value[0][0]==0:
+        return {"state": False, "message": "Requested post ID does not exist"}
+    dt = datetime.datetime.now()
+    postdate = int(str(dt.year) + str(dt.month).zfill(2) + str(dt.day).zfill(2) + str(dt.hour).zfill(2) + str(dt.minute).zfill(2) + str(dt.second).zfill(2))
+    execute_query(connection, f"""INSERT INTO {db_table_favorite} (type, account_uuid, postid, date)
+                                    VALUES ({favorite.type}, '{favorite.account_uuid}', '{favorite.postid}', {postdate});""")
+    return {"state": True, "message": "Your favorite has been accepted"}
 
 #---------------#
 # Connect to DB #
@@ -205,7 +247,7 @@ execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_users}(
 execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_books}(
                 isbn VARCHAR(13) PRIMARY KEY,
                 posts INT);""")
-execute_query(connection, f"""CREATE TABLE IF NOT EXISTS `posts`(
+execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_posts}(
                                 postid VARCHAR(36) PRIMARY KEY,
                                 isbn VARCHAR(13),
                                 page INT,
@@ -217,7 +259,8 @@ execute_query(connection, f"""CREATE TABLE IF NOT EXISTS `posts`(
                                 account_uuid VARCHAR(36),
                                 content VARCHAR(10000),
                                 FOREIGN KEY (account_uuid) REFERENCES {db_table_users} (uuid) ON DELETE RESTRICT);""")
-execute_query(connection, f"""CREATE TABLE IF NOT EXISTS `favorite`(
+execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_favorite}(
                                 type INT,
                                 account_uuid VARCHAR(36),
-                                postid VARCHAR(36) PRIMARY KEY);""")
+                                postid VARCHAR(36) PRIMARY KEY,
+                                date BIGINT);""")

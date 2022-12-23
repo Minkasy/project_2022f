@@ -6,5 +6,7 @@
     "db_name": "superrm",
     "db_table_users": "users",
     "db_table_books": "books",
+    "db_table_posts": "posts",
+    "db_table_favorite": "favorite",
     "default_usermode": 3
 }

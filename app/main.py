@@ -28,6 +28,8 @@ db_table_users = cfg["db_table_users"]
 db_table_books = cfg["db_table_books"]
 db_table_posts = cfg["db_table_posts"]
 db_table_favorite = cfg["db_table_favorite"]
+db_table_threads = cfg["db_table_threads"]
+db_table_chats = cfg["db_table_chats"]
 default_usermode = cfg["default_usermode"] # If you change this, you should see README.md
 
 #-------------------#---------------------------------------------------------------------#
@@ -152,6 +154,40 @@ async def favlist(id: str):
         result.append(tmp)
     return {"state": True, "data": result}
 
+@app.get("/getthreads")
+async def getthreads():
+    connection = create_db_connection(db_hostname, db_username, db_password, db_name)
+    value = execute_query(connection, f"SELECT * FROM {db_table_threads};")
+    if len(value)==0:
+        return {"state": False, "message": "No threads are available"}
+    result = []
+    for v in value:
+        tmp = {}
+        tmp["number"] = v[0]
+        tmp["title"] = v[1]
+        tmp["date"] = v[2]
+        tmp["type"] = v[3]
+        tmp["account_uuid"] = v[4]
+        result.append(tmp)
+    return {"state": True, "data": result}
+
+@app.get("/getchats/{thread}")
+async def getchats(thread: int):
+    connection = create_db_connection(db_hostname, db_username, db_password, db_name)
+    value = execute_query(connection, f"SELECT * FROM {db_table_chats} WHERE thread='{thread}'")
+    if len(value)==0:
+        return {"state": False, "message": "Requested thread number does not exist in the database"}
+    result = []
+    for v in value:
+        tmp = {}
+        tmp["postid"] = v[0]
+        tmp["thread"] = v[1]
+        tmp["postdate"] = v[2]
+        tmp["account_uuid"] = v[3]
+        tmp["content"] = v[4]
+        result.append(tmp)
+    return {"state": True, "data": result}
+
 class Register(BaseModel):
     id: str
     username: str
@@ -224,6 +260,51 @@ async def favorite(favorite: Favorite):
                                     VALUES ({favorite.type}, '{favorite.account_uuid}', '{favorite.postid}', {postdate});""")
     return {"state": True, "message": "Your favorite has been accepted"}
 
+class Chat(BaseModel):
+    thread: int
+    account_uuid: str
+    content: str
+
+@app.post("/postchat")
+async def postchat(chat: Chat):
+    connection = create_db_connection(db_hostname, db_username, db_password, db_name)
+    # check if the requested thread number is exists or not
+    value = execute_query(connection, f"SELECT count(number) FROM {db_table_threads} WHERE number='{chat.thread}'")
+    if value[0][0]==0:
+        return {"state": False, "message": "Your post has been refused because of requested thread number"}
+
+    # check if the given account_uuid is exists or not
+    value = execute_query(connection, f"SELECT count(uuid) FROM {db_table_users} WHERE uuid='{chat.account_uuid}'")
+    if value[0][0]==0:
+        return {"state": False, "message": "Requested account UUID does not exist"}
+
+    uniqueid = str(uuid.uuid4())
+    dt = datetime.datetime.now()
+    postdate = int(str(dt.year) + str(dt.month).zfill(2) + str(dt.day).zfill(2) + str(dt.hour).zfill(2) + str(dt.minute).zfill(2) + str(dt.second).zfill(2))
+    execute_query(connection, f"""INSERT INTO {db_table_chats} (postid, thread, postdate, account_uuid, content)
+                                    VALUES ('{uniqueid}', {chat.thread}, {postdate}, '{chat.account_uuid}', '{chat.content}');""")
+    return {"state": True, "message": "Your post has been accepted", "postid": {uniqueid}}
+
+class Thread(BaseModel):
+    title: str
+    type: int
+    account_uuid: str
+
+@app.post("/createthread")
+async def createthread(thread: Thread):
+    connection = create_db_connection(db_hostname, db_username, db_password, db_name)
+
+    # check if the given account_uuid is exists or not
+    value = execute_query(connection, f"SELECT count(uuid) FROM {db_table_users} WHERE uuid='{thread.account_uuid}'")
+    if value[0][0]==0:
+        return {"state": False, "message": "Requested account UUID does not exist"}
+
+    dt = datetime.datetime.now()
+    postdate = int(str(dt.year) + str(dt.month).zfill(2) + str(dt.day).zfill(2) + str(dt.hour).zfill(2) + str(dt.minute).zfill(2) + str(dt.second).zfill(2))
+    execute_query(connection, f"""INSERT INTO {db_table_threads} (title, date, type, account_uuid)
+                                    VALUES ('{thread.title}', {postdate}, {thread.type}, '{thread.account_uuid}');""")
+    return {"state": True, "message": "Your request has been accepted"}
+
 #---------------#
 # Connect to DB #
 #---------------#
@@ -264,3 +345,16 @@ execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_favorite}(
                                 account_uuid VARCHAR(36),
                                 postid VARCHAR(36) PRIMARY KEY,
                                 date BIGINT);""")
+execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_threads}(
+                                number INT AUTO_INCREMENT PRIMARY KEY,
+                                title VARCHAR(100),
+                                date BIGINT,
+                                type INT,
+                                account_uuid VARCHAR(36));""")
+execute_query(connection, f"""CREATE TABLE IF NOT EXISTS {db_table_chats}(
+                                postid VARCHAR(36) PRIMARY KEY,
+                                thread INT,
+                                postdate BIGINT,
+                                account_uuid VARCHAR(36),
+                                content VARCHAR(10000),
+                                FOREIGN KEY (thread) REFERENCES {db_table_threads} (number) ON DELETE RESTRICT);""")

@@ -8,5 +8,7 @@
     "db_table_books": "books",
     "db_table_posts": "posts",
     "db_table_favorite": "favorite",
+    "db_table_threads": "threads",
+    "db_table_chats": "chats",
     "default_usermode": 3
 }

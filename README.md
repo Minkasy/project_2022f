@@ -202,6 +202,52 @@ curl example.com/favlist/foo
 | ---- | ---- |
 |  Normal  |  0  |
 
+### Thread
+
+スレッドを作成できます。それぞれのスレッドにチャットを投稿することで、様々な議論ができます。
+
+以下の curl コマンドのような HTTP リクエストでスレッドを作成できます。
+
+```
+curl -X POST "example.com/createthread" -H 'Content-Type: application/json' -d '{"title":"first thread","type":0,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739"}'
+```
+
+### Post chat
+
+以下の curl コマンドのような HTTP リクエストでスレッドに投稿できます。
+
+```
+curl -X POST "example.com/postchat" -H 'Content-Type: application/json' -d '{"thread":1,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739", "content":"can you see me?"}'
+```
+
+### Get threads
+
+以下の curl コマンドのような HTTP リクエストで存在しているスレッドを取得できます。
+
+```
+curl example.com/getthreads
+```
+
+上記のコマンドを実行すると、以下のような値が得られます。
+
+```
+{"state":true,"data":[{"number":1,"title":"first thread","date":20230112133006,"type":0,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739"},{"number":2,"title":"second thread","date":20230112133107,"type":0,"account_uuid":"0e4fa882-ff41-4b85-87ea-4c1b879aacc5"}]}
+```
+
+### Get chats
+
+以下の curl コマンドのような HTTP リクエストで存在しているスレッドを取得できます。
+
+```
+curl example.com/getchats/1
+```
+
+上記のコマンドを実行すると、以下のような値が得られます。
+
+```
+{"state":true,"data":[{"postid":"1e0a9b99-f26a-4eff-a377-50076d03416e","thread":1,"postdate":20230112133846,"account_uuid":"0a891785-9484-44e6-b1ea-970792223739","content":"can you see me?"},{"postid":"8f71bdaf-c94f-4ab2-b870-eb25edb57658","thread":1,"postdate":20230112133944,"account_uuid":"0e4fa882-ff41-4b85-87ea-4c1b879aacc5","content":"yes"}]}
+```
+
 ## DONE
 
  - ユーザの登録
@@ -210,6 +256,8 @@ curl example.com/favlist/foo
    - ISBN, ページ数, 位置, 付箋の種別, 投稿日時, 更新日時, 投稿者 UUID, 内容を保持
  - セットアップスクリプトの作成
    - 実行すると systemd から管理できるように
+ - コミュニティ機能の実装
+   - スレッド
 
 ## TODO
 
@@ -221,8 +269,6 @@ curl example.com/favlist/foo
 
 ### Extra
 
- - コミュニティ機能の実装
-   - スレッド等
  - パスワード保存方法の見直し
    - DB 登録時はハッシュ化しているけど、ソルトとか全く触ってないので微妙かもしれない
    - あと、HTTPS なら登録時に生のパスワードを送信しても良いのか？という気持ちもある
